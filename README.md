@@ -115,7 +115,7 @@ public:
         cout << ">> 已將第 " << fromIdx << " 首移動到第 " << toIdx << " 首。" << endl;
     }
 
-    // --- 新增功能：刪除歌曲 ---
+    // --- 刪除歌曲 ---
     void removeSong(int idx) {
         if (idx < 1 || idx > playlist.size()) {
             cout << ">> 錯誤：找不到該歌曲編號。" << endl;

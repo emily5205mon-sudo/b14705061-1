@@ -49,6 +49,152 @@ chrono：計算歌曲總時數與包廂剩餘時間的精確運算。
 
 4.基礎介面開發：完成初步互動介面，可顯示目前的待播放清單與剩餘時間預算。
 
+#include <iostream>
+#include <string>
+#include <list>
+#include <vector>
+#include <fstream>
+#include <iomanip>
+#include <algorithm>
+
+using namespace std;
+
+struct Song {
+    string title;
+    string artist;
+    int durationSec;
+};
+
+class KTVSystem {
+private:
+    list<Song> playlist;
+    vector<Song> songBank; // 模擬 KTV 的歌曲庫
+    int remainingRoomTimeSec;
+
+public:
+    KTVSystem(int roomMinutes) : remainingRoomTimeSec(roomMinutes * 60) {
+        // 預載更多熱門歌曲
+        songBank = {
+            {"Thank U, Next", "Ariana Grande", 331}, {"泡沫", "鄧紫棋", 259},
+            {"太聰明", "陳綺貞", 263}, {"大人中", "盧廣仲", 282},
+            {"Manchild", "Sabrina Carpenter", 213}, {"RUDE!", "Hearts2Hearts", 200},
+            {"我怕練太壯", "曾博恩", 261}, {"Abracadabra", "Lady Gaga", 223},
+            {"Not that good", "黃大謙", 258}, {"ISTJ", "NCT DREAM", 202},
+            {"Blue Valenine", "NMIXX", 195}, {"明室", "洪佩瑜", 259}
+        };
+    }
+
+    void showSongBank() {
+        cout << "\n--- 可點歌曲庫 ---" << endl;
+        for (int i = 0; i < songBank.size(); ++i) {
+            cout << i + 1 << ". " << songBank[i].title << " - " << songBank[i].artist << endl;
+        }
+    }
+
+    void addSongFromBank(int bankIdx, int position = -1) {
+        if (bankIdx < 1 || bankIdx > songBank.size()) return;
+        Song selected = songBank[bankIdx - 1];
+
+        if (position <= 0 || position > playlist.size()) {
+            playlist.push_back(selected);
+            cout << ">> 已加入: " << selected.title << endl;
+        } else {
+            auto it = playlist.begin();
+            advance(it, position - 1);
+            playlist.insert(it, selected);
+            cout << ">> 已插播至第 " << position << " 順位: " << selected.title << endl;
+        }
+    }
+
+    void moveSong(int fromIdx, int toIdx) {
+        if (fromIdx < 1 || fromIdx > playlist.size() || toIdx < 1 || toIdx > playlist.size()) {
+            cout << ">> 錯誤：無效的順序編號。" << endl;
+            return;
+        }
+        auto itFrom = playlist.begin();
+        advance(itFrom, fromIdx - 1);
+        Song target = *itFrom;
+        
+        playlist.erase(itFrom);
+
+        auto itTo = playlist.begin();
+        advance(itTo, toIdx - 1);
+        playlist.insert(itTo, target);
+        cout << ">> 已將第 " << fromIdx << " 首移動到第 " << toIdx << " 首。" << endl;
+    }
+
+    // --- 新增功能：刪除歌曲 ---
+    void removeSong(int idx) {
+        if (idx < 1 || idx > playlist.size()) {
+            cout << ">> 錯誤：找不到該歌曲編號。" << endl;
+            return;
+        }
+        auto it = playlist.begin();
+        advance(it, idx - 1);
+        string deletedTitle = it->title;
+        playlist.erase(it);
+        cout << ">> 已成功刪除歌曲: " << deletedTitle << endl;
+    }
+
+    void displayStatus() {
+        int totalTime = 0;
+        for (const auto& s : playlist) totalTime += s.durationSec;
+
+        cout << "\n================ [當前播放狀態] ================" << endl;
+        cout << "包廂剩餘: " << remainingRoomTimeSec / 60 << "分 | 歌單總計: " << totalTime / 60 << "分" << endl;
+        if (totalTime > remainingRoomTimeSec) cout << "⚠️  警告：剩餘時間不足！" << endl;
+        cout << "-----------------------------------------------" << endl;
+
+        int idx = 1;
+        for (const auto& s : playlist) {
+            cout << idx++ << ". [" << s.artist << "] " << s.title << endl;
+        }
+        if (playlist.empty()) cout << "(目前歌單空空如也)" << endl;
+        cout << "===============================================\n" << endl;
+    }
+};
+
+int main() {
+    KTVSystem myKTV(20);
+    int choice, songIdx, pos, pos2;
+
+    while (true) {
+        myKTV.displayStatus();
+        cout << "1.點歌 2.插播 3.調整順序 4.刪除歌曲 5.離開系統\n請輸入指令: ";
+        cin >> choice;
+
+        if (choice == 1) {
+            myKTV.showSongBank();
+            cout << "請選擇歌曲編號: ";
+            cin >> songIdx;
+            myKTV.addSongFromBank(songIdx);
+        }
+        else if (choice == 2) {
+            myKTV.showSongBank();
+            cout << "請選擇歌曲編號: ";
+            cin >> songIdx;
+            cout << "想要插到第幾順位? ";
+            cin >> pos;
+            myKTV.addSongFromBank(songIdx, pos);
+        }
+        else if (choice == 3) {
+            cout << "請輸入要移動的歌曲編號: ";
+            cin >> pos;
+            cout << "要移到哪一個位置? ";
+            cin >> pos2;
+            myKTV.moveSong(pos, pos2);
+        }
+        // --- 處理刪除指令 ---
+        else if (choice == 4) {
+            cout << "請輸入要刪除的歌曲編號: ";
+            cin >> pos;
+            myKTV.removeSong(pos);
+        }
+        else break;
+    }
+    return 0;
+}
+
 ### 遇到的困難
 <!-- 遇到什麼問題、如何解決或打算如何解決 -->
 1.時間即時更新：在控制台介面下，要實現「不影響操作的前提下即時刷新剩餘時間」具有挑戰。
